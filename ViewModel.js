@@ -14,13 +14,16 @@ BarrageViewModel.prototype = {
     initialize: function () {
         this.oBox = this.view.querySelectorAll('[barrage-area]')[0]
         this.barrageSpan = this.oBox.querySelectorAll('span.item')[0]
-        this.list = this.view.querySelector('[data-info]')
+        this.area = this.view.querySelectorAll('[area]')[0]
+        this.list = this.area.querySelector('[data-info]')
         this.listItem = this.list.querySelector('[info-item]')
 
         this.oBox.removeChild(this.barrageSpan)
+        this.bindEvents()
         this.bindElements()
         this.bindList()
-        this.bindEvents()
+        this.bindAreaScroll()
+
     },
     bindElements: function () {
         var barrageInput = this.view.querySelector('[barrage-input]'),
@@ -114,6 +117,40 @@ BarrageViewModel.prototype = {
                 this.list.appendChild(ele)
             }
         }
+        // 发布自定义滚动条显示事件
+        observer.publish('barrage.knob.show')
+    },
+    // 绑定所有弹幕显示区域dom
+    bindAreaScroll () {
+        var knob = this.area.querySelectorAll('.knob')[0]
+        // 清楚文字被选中状态
+        this.area.addEventListener('mousemove', function () {
+            window.getSelection ? window.getSelection().removeAllRanges() : document.selection.empty()
+        })
+        
+        var process = (function (e) {
+            // 清楚文字选中状态
+            window.getSelection ? window.getSelection().removeAllRanges() : document.selection.empty()
+            var offset = knob.offsetTop + e.clientY - startY,
+                areaHeight = this.area.offsetHeight                
+            if (offset >= 0 && offset <= this.area.offsetHeight - knob.offsetHeight) {
+                knob.style.top = knob.offsetTop + e.clientY - startY + 'px'                
+                startY = e.clientY
+                let listHeight = this.list.scrollHeight
+                this.list.style.top = -(listHeight - areaHeight) * offset / (areaHeight - knob.offsetHeight) + 'px'
+            }
+        }).bind(this)
+        
+        var startY = 0
+        knob.addEventListener('mousedown', (function (e) {
+            startY = e.clientY     
+            this.area.addEventListener('mousemove', process)
+        }).bind(this))
+        document.addEventListener('mouseup', (function () {
+            startY = 0
+            this.area.removeEventListener('mousemove', process)
+        }).bind(this))
+       
     },
     bindEvents: function () {
         function updateListView(item) {
@@ -125,8 +162,20 @@ BarrageViewModel.prototype = {
             time.innerHTML = item.time
             date.innerHTML = item.date
             message.innerHTML = item.message
-            this.list.appendChild(ele)
+            this.list.insertBefore(ele, this.list.children[1])
+            // 每增加一个弹幕元素，发布自定义滚动条显示事件
+            observer.publish('barrage.knob.show')
         }
+        // 订阅弹幕元素增加事件
         observer.subscribe('barrage.added', updateListView.bind(this))
+        // 订阅判断自定义滚动条是否显示事件
+        observer.subscribe('barrage.knob.show', (function () {
+            if (this.list.scrollHeight > this.area.offsetHeight) {
+                var knob = this.area.querySelector('.knob');
+                if (knob.offsetTop < 0) {
+                    knob.style.top = '0';
+                }
+            }
+        }).bind(this))
     }
 }
