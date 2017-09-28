@@ -20,16 +20,17 @@ BarrageViewModel.prototype = {
 
         this.oBox.removeChild(this.barrageSpan)
         this.bindEvents()
-        this.bindElements()
+        this.bindSendElements()
         this.bindList()
         this.bindAreaScroll()
 
     },
-    bindElements: function () {
+    // 绑定发送弹幕元素dom
+    bindSendElements: function () {
         var barrageInput = this.view.querySelector('[barrage-input]'),
             barrageSend = this.view.querySelector('[barrage-send]'),
             methodName = barrageSend.getAttribute('data-click')
-        bW = this.oBox.offsetWidth,
+            bW = this.oBox.offsetWidth,
             bH = this.oBox.offsetHeight
         // 绑定发送弹幕事件
         barrageSend.addEventListener('click', (function () {
@@ -56,6 +57,21 @@ BarrageViewModel.prototype = {
             // 清除输入框内容
             barrageInput.value = ''
         }).bind(this))
+
+        // 自动装填弹幕
+        var i = 0,
+            data = this.model.getAll(),
+            len = data.length,
+            that = this
+        
+        for (; i < len; i++) {
+            setTimeout((function(message) {
+                return function(){
+                    createBarrageEle.call(that, message)
+                }
+            })(data[i].message), i*1000);
+        }
+
 
         // 动态创建弹幕元素
         function createBarrageEle(message) {
@@ -102,6 +118,7 @@ BarrageViewModel.prototype = {
             }).bind(this), 1000 / 60)
         }
     },
+    // 绑定弹幕显示区域列表元素
     bindList: function () {
         var data = this.model.getAll()
 
