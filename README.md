@@ -1,5 +1,7 @@
 
-### 目的： 使用mvvm模式 设计 弹幕发送demo
+### 目的： 使用mvvm模式 设计 弹幕发送demo 
+[预览一下](http://owzbvvrrt.bkt.clouddn.com/mvvm_index.html)
+
 ### 分析
   
 1.  使用html和css创建视图        
